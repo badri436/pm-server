@@ -5,4 +5,5 @@ const authController = require('../controllers/authController')
 authRoute.post("/register",authController.register)
 authRoute.post("/resendMail",authController.resendMail)
 
+
 module.exports = authRoute
