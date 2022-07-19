@@ -8,15 +8,15 @@ const handlebars = require("handlebars")
 const fs = require("fs")
 const path = require("path")
 
-
+const config = require("../config")
 const indexFile = fs.readFileSync(path.resolve(__dirname, "../views/index.hbs"), 'utf8')
 
 const verifyTemplate = handlebars.compile(indexFile)
 let transport = nodemailer.createTransport({
     service: "gmail",
     auth: {
-        user: "rithisathaiyan@gmail.com",
-        pass: "wtvpgrjbubzdtsts"
+        user: process.env.EMAIL,
+        pass: process.env.PASSWORD
     }
 })
 
@@ -27,7 +27,7 @@ const register = async (req, res) => {
     if (getUser) {
         return res.status(400).json({
             "status": false,
-            "message": "User Already Exists..."
+            "message": config.user_already_exists
         })
     }
 
@@ -43,12 +43,12 @@ const register = async (req, res) => {
 
     const token = jwt.sign({ id: newUser._id, email: newUser.email }, process.env.TOKENID, { expiresIn: "5m" })
 
-    var message = {
-        from: '"ADMIN TEAM" <admin@mail.com>',
+    let message = {
+        from: process.env.FROM,
         to: newUser.email,
-        subject: "User Account Verification",
+        subject: "User Account Email Confirmation",
         html: verifyTemplate({
-            url: "http://localhost:3000",
+            url: process.env.FRONT_END_URL,
             token: token
         })
     }
@@ -63,7 +63,7 @@ const register = async (req, res) => {
 
     res.status(200).json({
         "status": true,
-        "data": "signup successfully"
+        "data": config.signup_success
     })
 }
 
@@ -74,11 +74,11 @@ const resendMail = async (req, res) => {
         const token = jwt.sign({ id: getUser._id, email: getUser.email }, process.env.TOKENID, { expiresIn: "10m" })
 
         let message = {
-            from: '"ADMIN TEAM" <admin@mail.com>',
+            from: process.env.FROM,
             to: getUser.email,
-            subject: "User Account Verification",
+            subject: "User Account Email Confirmation",
             html: verifyTemplate({
-                url: "http://localhost:3000",
+                url: process.env.FRONT_END_URL,
                 token: token
             })
         }
@@ -98,13 +98,13 @@ const resendMail = async (req, res) => {
     else {
         return res.status(400).json({
             "status": false,
-            "message": "User Not Found..."
+            "message": config.user_not_exist
         })
     }
 
     res.status(200).json({
         "status": true,
-        "data": "Mail Sent Successfully!"
+        "data": config.mail_sent
     })
 }
 
@@ -116,7 +116,7 @@ const activate = async (req, res) => {
             if ((getToken) == "error") {
                 return res.status(400).json({
                     "status": false,
-                    "message": "token expired"
+                    "message": config.token_expired
                 })
             }
             const { id } = getToken
@@ -125,7 +125,7 @@ const activate = async (req, res) => {
                 if (getUser.verifyStatus == "success") {
                     return res.status(400).json({
                         "status": false,
-                        "message": "user already verified"
+                        "message": config.user_already_verified
                     })
                 }
                 await user.findByIdAndUpdate(id, {
@@ -136,13 +136,13 @@ const activate = async (req, res) => {
             } else {
                 return res.status(400).json({
                     "status": false,
-                    "message": "user not exists"
+                    "message": config.user_not_exist
                 })
             }
         }
         return res.status(200).json({
             "status": true,
-            "data": "token verified successfully"
+            "data": config.token_verified
         })
     } catch (error) {
         return res.status(400).json({
