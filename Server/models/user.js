@@ -17,6 +17,10 @@ const userSchema = mongoose.Schema({
         type: String,
         required: false
     },
+    resetToken: {
+        type: String,
+        required: false
+    },
     status: {
         type: Number,
         default: 1

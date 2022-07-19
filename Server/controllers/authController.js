@@ -10,8 +10,9 @@ const path = require("path")
 
 const config = require("../config")
 const indexFile = fs.readFileSync(path.resolve(__dirname, "../views/index.hbs"), 'utf8')
-
+const resetFile = fs.readFileSync(path.resolve(__dirname, "../views/Verify.hbs"), 'utf8')
 const verifyTemplate = handlebars.compile(indexFile)
+const resetTemplate = handlebars.compile(resetFile)
 let transport = nodemailer.createTransport({
     service: "gmail",
     auth: {
@@ -151,6 +152,85 @@ const activate = async (req, res) => {
         })
     }
 }
+
+const forgetPassword = async (req, res) => {
+    try {
+        const { email } = req.body
+        const getUser = await user.findOne({ "email": email })
+        if (getUser != null || getUser != undefined) {
+            const token = jwt.sign({ id: getUser._id, email: getUser.email }, process.env.RESET_TOKENID, { expiresIn: "20m" })
+            var message = {
+                from: '"ADMIN TEAM" <admin@mail.com>',
+                to: getUser.email,
+                subject: "Reset Password",
+                html: resetTemplate({
+                    url: "http://localhost:3000",
+                    token: token
+                })
+            }
+            transport.sendMail(message, (err) => {
+                if (err) {
+                    console.log(err)
+                }
+                else {
+                    return res.status(200).json({
+                        "status": true,
+                        "data": "confirmation mail sent successfully"
+                    })
+                }
+            })
+        } else {
+            console.log("hi")
+            return res.status(400).json({
+                "status": false,
+                "message": "invalid email"
+            })
+        }
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "data": error
+        })
+    }
+}
+
+const resetPassword = async (req, res) => {
+    try {
+        const { token, password } = req.body
+        if (token) {
+            const decodedToken = await getDecodedPassword(token)
+            const decodedPassword = await bcrypt.hash(password, 10)
+            if (decodedToken != "error") {
+                const { id } = decodedToken
+                await user.findByIdAndUpdate(id, {
+                    $set: {
+                        "password": decodedPassword.toString()
+                    }
+                })
+                return res.status(200).json({
+                    "status": true,
+                    "data": "password reset successfully"
+                })
+            } else {
+                return res.status(400).json({
+                    "status": false,
+                    "message": "token expired"
+                })
+            }
+        } else {
+            return res.status(400).json({
+                "status": false,
+                "message": "invalid token"
+            })
+        }
+
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": error
+        })
+    }
+}
 const getDecoded = (token) => {
     return new Promise((resolve) => {
         jwt.verify(token, process.env.TOKENID, async (err, decoded) => {
@@ -162,4 +242,16 @@ const getDecoded = (token) => {
         })
     })
 }
-module.exports = { register, resendMail, activate }
+const getDecodedPassword = (token) => {
+    return new Promise((resolve) => {
+        jwt.verify(token, process.env.RESET_TOKENID, async (err, decoded) => {
+            if (!err) {
+                resolve(decoded)
+            } else {
+                resolve("error")
+            }
+        })
+    })
+}
+
+module.exports = { register, resendMail, activate, forgetPassword, resetPassword }
