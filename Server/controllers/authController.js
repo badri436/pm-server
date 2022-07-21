@@ -143,12 +143,55 @@ const activate = async (req, res) => {
         }
         return res.status(200).json({
             "status": true,
-            "data": config.token_verified
+            "data": config.user_verified
         })
     } catch (error) {
         return res.status(400).json({
             "status": false,
             "message": error
+        })
+    }
+}
+
+
+const login = async(req,res) => {
+    try{
+        const { email, password } = req.body
+        const getUser = await user.findOne({email})
+        if(getUser){
+            if(getUser.verifyStatus === "success"){
+                const passwordCheck = await bcrypt.compare(password,getUser.password)
+                if(passwordCheck){
+                    const token = jwt.sign({id:getUser._id,email:getUser.email},process.env.TOKENID,{expiresIn:"1d"})
+                    res.status(200).json({
+                        "status":true,
+                        "data": token
+                    })
+                }        
+                else{
+                    res.status(400).json({
+                        "status":false,
+                        "message":config.password_incorrect
+                    })
+                }
+            }        
+            else{
+                res.status(400).json({
+                    "status":false,
+                    "message":config.account_verification_pending
+                })
+            }
+        }
+        else{
+            return res.status(400).json({
+                "status":false,
+                "message":config.user_not_exist
+            })
+        }
+    }catch(error){
+        res.status(400).json({
+            "status":false,
+            "message":error
         })
     }
 }
@@ -160,11 +203,11 @@ const forgetPassword = async (req, res) => {
         if (getUser != null || getUser != undefined) {
             const token = jwt.sign({ id: getUser._id, email: getUser.email }, process.env.RESET_TOKENID, { expiresIn: "20m" })
             var message = {
-                from: '"ADMIN TEAM" <admin@mail.com>',
+                from: process.env.FROM,
                 to: getUser.email,
                 subject: "Reset Password",
                 html: resetTemplate({
-                    url: "http://localhost:3000",
+                    url: process.env.FRONT_END_URL,
                     token: token
                 })
             }
@@ -175,7 +218,7 @@ const forgetPassword = async (req, res) => {
                 else {
                     return res.status(200).json({
                         "status": true,
-                        "data": "confirmation mail sent successfully"
+                        "data": config.mail_sent
                     })
                 }
             })
@@ -183,7 +226,7 @@ const forgetPassword = async (req, res) => {
             console.log("hi")
             return res.status(400).json({
                 "status": false,
-                "message": "invalid email"
+                "message": config.invalid_mail
             })
         }
     } catch (error) {
@@ -209,18 +252,18 @@ const resetPassword = async (req, res) => {
                 })
                 return res.status(200).json({
                     "status": true,
-                    "data": "password reset successfully"
+                    "data": config.password_reset_success
                 })
             } else {
                 return res.status(400).json({
                     "status": false,
-                    "message": "token expired"
+                    "message": config.token_expired
                 })
             }
         } else {
             return res.status(400).json({
                 "status": false,
-                "message": "invalid token"
+                "message": config.token_invalid
             })
         }
 
@@ -254,4 +297,4 @@ const getDecodedPassword = (token) => {
     })
 }
 
-module.exports = { register, resendMail, activate, forgetPassword, resetPassword }
+module.exports = { register, resendMail, activate, forgetPassword, resetPassword, login }

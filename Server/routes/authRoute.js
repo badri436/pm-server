@@ -7,4 +7,7 @@ authRoute.post("/resendMail", authController.resendMail)
 authRoute.post("/accept", authController.activate)
 authRoute.post("/forget-password", authController.forgetPassword)
 authRoute.post("/resetPassword", authController.resetPassword)
+authRoute.post("/login", authController.login)
+
+
 module.exports = authRoute
