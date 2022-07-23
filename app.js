@@ -14,9 +14,7 @@ require('dotenv/config')
 
 app.use(bodyParser.json({ urlencoded: true }))
 app.use("/auth", authRoute)
-app.get("/", (req, res) => {
-    res.send("hii")
-})
+
 mongoose.connect(process.env.MONGODB, (err) => {
     if (!err)
         console.log("Database Connected")
