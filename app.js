@@ -2,7 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const app = express()
 const corsOptions = {
-    origin: 'https://project-management-b042f.web.app/',
+    origin: '*',
     credentials: true,
     optionSuccessStatus: 200
 }
