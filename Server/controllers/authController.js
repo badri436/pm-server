@@ -161,8 +161,9 @@ const login = async(req,res) => {
         if(getUser){
             if(getUser.verifyStatus === "success"){
                 const passwordCheck = await bcrypt.compare(password,getUser.password)
+    
                 if(passwordCheck){
-                    const token = jwt.sign({id:getUser._id,email:getUser.email},process.env.TOKENID,{expiresIn:"1d"})
+                    const token = jwt.sign({userId:getUser._id, email:getUser.email, name:getUser.name},process.env.TOKENID,{expiresIn:"1d"})
                     res.status(200).json({
                         "status":true,
                         "data": token
