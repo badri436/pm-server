@@ -13,25 +13,32 @@ const index = async(req,res)=>{
 }
 
 const create = async(req,res)=>{
-    const {taskName, description, assignTo, projectId, startDate, endDate, priority} = req.body
-    const { userId } = req.user
-
-    const newTask = new task({
-        userId,
-        taskName,
-        description,
-        assignTo,
-        projectId,
-        startDate,
-        endDate,
-        priority
-    })
-
-    await newTask.save();
-
-    return res.status(200).json({
-        "status":true
-    })
+    try {
+        const {taskName, description, assignTo, projectId, startDate, endDate, priority} = req.body
+        const { userId } = req.user
+    
+        const newTask = new task({
+            userId,
+            taskName,
+            description,
+            assignTo,
+            projectId,
+            startDate,
+            endDate,
+            priority
+        })
+    
+        await newTask.save();
+    
+        return res.status(200).json({
+            "status":true
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status":false,
+            "message":"Cannot "
+        })
+    }
 }
 
 module.exports = {create, index}
