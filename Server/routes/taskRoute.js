@@ -4,6 +4,6 @@ const taskController = require('../controllers/taskController')
 const middle = require('../middleware/middleware')
 
 taskRoute.post("/create",middle,taskController.create)
-taskRoute.post("/list",middle,taskController.index)
+taskRoute.get("/list",middle,taskController.index)
 
 module.exports = taskRoute

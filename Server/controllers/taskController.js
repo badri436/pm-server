@@ -13,7 +13,7 @@ const index = async(req,res)=>{
 }
 
 const create = async(req,res)=>{
-    try {
+    // try {
         const {taskName, description, assignTo, projectId, startDate, endDate, priority} = req.body
         const { userId } = req.user
     
@@ -31,14 +31,15 @@ const create = async(req,res)=>{
         await newTask.save();
     
         return res.status(200).json({
-            "status":true
+            "status":true,
+            "data":"Task Created Successfully"
         })
-    } catch (error) {
-        return res.status(400).json({
-            "status":false,
-            "message":"Cannot "
-        })
-    }
+    // } catch (error) {
+    //     return res.status(400).json({
+    //         "status":false,
+    //         "message":"Task Creation Failed!"
+    //     })
+    // }
 }
 
 module.exports = {create, index}
