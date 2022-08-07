@@ -7,5 +7,7 @@ const middle = require('../middleware/middleware')
 taskRoute.post("/list",middle,taskController.index)
 taskRoute.post("/create",middle,taskController.create)
 
+taskRoute.post("/group",middle,taskController.group)
+
 
 module.exports = taskRoute
