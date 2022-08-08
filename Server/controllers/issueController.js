@@ -12,6 +12,7 @@ const create = async(req,res) => {
             description,
             userId,
             projectId,
+            issueStatus:"Completed",
             startDate,
             endDate,
         })
@@ -32,39 +33,52 @@ const create = async(req,res) => {
 
 const issueBasedOnUser = async(req,res)=>{
    
-    const { userId } = req.user
-    const {count, page} = req.query
-    const skip = count*page
-    const getIssue = await issues.find({status:1, userId:userId}).limit(Number(count)).skip(Number(skip))
-    const getIssueCount = await issues.find({status:1, userId:userId}).count()
-    return res.status(200).json({
-        "status":true,
-        "data":getIssue,
-        "totalCount":getIssueCount
-    })
+    try {
+        const { userId } = req.user
+        const {count, page} = req.query
+        const skip = count*page
+        const getIssue = await issues.find({status:1, userId:userId}).limit(Number(count)).skip(Number(skip))
+        const getIssueCount = await issues.find({status:1, userId:userId}).count()
+        return res.status(200).json({
+            "status":true,
+            "data":getIssue,
+            "totalCount":getIssueCount
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status":false,
+            "message":"Failed"
+        })
+    }
 }
 
 const issueBasedOnProject = async(req,res)=>{
     
-    const { projectId } = req.body
-    const {count, page} = req.query
-    const skip = count*page
-    const getIssue = await issues.find({status:1, projectId:projectId}).limit(Number(count)).skip(Number(skip))
-    const getIssueCount = await issues.find({status:1, projectId:projectId}).count()
-    return res.status(200).json({
-        "status":true,
-        "data":getIssue,
-        "totalCount":getIssueCount
-    })
+    try {
+        const { projectId } = req.body
+        const {count, page} = req.query
+        const skip = count*page
+        const getIssue = await issues.find({status:1, projectId:projectId}).limit(Number(count)).skip(Number(skip))
+        const getIssueCount = await issues.find({status:1, projectId:projectId}).count()
+        return res.status(200).json({
+            "status":true,
+            "data":getIssue,
+            "totalCount":getIssueCount
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status":false,
+            "message":"Failed"
+        })
+    }
 }
 
-const group = async(req,res) => {
-    const {projectId} = req.body
+const groupByProject = async(req,res) => {
+   
     try {
+        const { page, count } = req.query
+        const skip = page * count
         const filter = await issues.aggregate()
-        .match({
-            projectId:mongoose.Types.ObjectId(projectId)
-        })
         .lookup({
             from:"projects",
             localField:"projectId",
@@ -76,8 +90,9 @@ const group = async(req,res) => {
             "_id": 1,
             "projectId": 1,
             "userId": 1,
-            "issueName": 1,
+            "issue": 1,
             "description": 1,
+            "issueStatus":1,
             "projectDetails.projectName": 1,
             "startDate": 1,
             "endDate": 1,
@@ -90,10 +105,20 @@ const group = async(req,res) => {
                 $push:"$$ROOT"
             }
         })
+        .sort({ "createdAt": -1 })
+        .facet({
+            data: [{ $skip: Number(skip) }, { $limit: Number(count) }]
+        })
 
-        return res.status(400).json({
-            "status":false,
-            "data": filter
+        const issueCount = await issues.aggregate()
+        .group({
+            _id: "$projectId",
+        }).count("totalcount")
+
+        return res.status(200).json({
+            "status":true,
+            "data":filter[0].data,
+            "totalCount":issueCount[0].totalcount
         })
     } catch (error) {
         return res.status(400).json({
@@ -102,4 +127,29 @@ const group = async(req,res) => {
         })
     }
 }
-module.exports = {create, issueBasedOnUser, issueBasedOnProject, group}
+
+
+const groupByStatus = async(req,res) => {
+    try {
+        
+        const filter = await issues.aggregate()
+
+        .group({
+            _id:"$issueStatus",
+            issueList:{
+                $push:"$$ROOT"
+            }
+        })
+
+        return res.status(200).json({
+            "status":true,
+            "data":filter
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status":false,
+            "message":"Failed"
+        })
+    }
+}
+module.exports = {create, issueBasedOnUser, issueBasedOnProject, groupByProject, groupByStatus}

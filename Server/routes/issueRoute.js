@@ -5,6 +5,7 @@ const middle = require('../middleware/middleware')
 
 issueRoute.post("/create",middle,issueController.create)
 issueRoute.get("/listbasedonuser",middle,issueController.issueBasedOnUser)
-issueRoute.get("/group",middle,issueController.group)
+issueRoute.get("/groupbyproject",middle,issueController.groupByProject)
+issueRoute.get("/groupbystatus",middle,issueController.groupByStatus)
 issueRoute.get("/listbasedonproject",middle,issueController.issueBasedOnProject)
 module.exports = issueRoute

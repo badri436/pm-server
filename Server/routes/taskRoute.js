@@ -4,10 +4,12 @@ const taskController = require('../controllers/taskController')
 const middle = require('../middleware/middleware')
 
 
-taskRoute.post("/list",middle,taskController.index)
+taskRoute.get("/listbasedonuser",middle,taskController.listBasedOnUser)
+taskRoute.get("/listbasedonproject",middle,taskController.listBasedOnProject)
 taskRoute.post("/create",middle,taskController.create)
 
-taskRoute.post("/group",middle,taskController.group)
+taskRoute.post("/groupbystatus",middle,taskController.groupByStatus)
+taskRoute.get("/groupbyproject",middle,taskController.groupByProject)
 
 
 module.exports = taskRoute

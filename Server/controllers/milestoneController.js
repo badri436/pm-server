@@ -36,7 +36,7 @@ const milestoneBasedOnUser = async (req, res) => {
     const { userId } = req.user
     const { count, page } = req.query
     const skip = count * page
-    const getMilestone = await milestone.find({ status: 1, userId: userId }).populate({ path: "owner", model: "user", select: { _id: 1, name: 1 } }).limit(Number(count)).skip(Number(skip))
+    const getMilestone = await milestone.find({ status: 1, userId: userId }).populate({ path: "projectId", model: "project", select: { _id: 1, projectName: 1 } }).populate({ path: "owner", model: "user", select: { _id: 1, name: 1 } }).limit(Number(count)).skip(Number(skip))
     const getMilestoneCount = await milestone.find({ status: 1, userId: userId }).count()
     return res.status(200).json({
         "status": true,

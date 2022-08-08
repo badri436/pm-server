@@ -17,6 +17,11 @@ const issueSchema = mongoose.Schema({
         type:mongoose.Types.ObjectId,
         ref:"project"
     },
+    issueStatus:{
+        type: String,
+        required: true,
+        enum: ["Open", "In Progress", "To be Tested", "Completed"]
+    },
     startDate:{
         type: String,
         required: true
