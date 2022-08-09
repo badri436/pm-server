@@ -23,7 +23,7 @@ const index = async (req, res) => {
 
 const create = async (req, res) => {
     try {
-        const { taskName, description, assignTo, projectId, taskListId, startDate, endDate, priority } = req.body
+        const { taskName, description, assignTo, projectId, startDate, endDate, priority } = req.body
         const { userId } = req.user
 
         const newTask = new task({
@@ -39,11 +39,7 @@ const create = async (req, res) => {
         })
 
         await newTask.save();
-        await milestoneTaskList.findByIdAndUpdate(taskListId, {
-            $push: {
-                taskId: newTask._id
-            }
-        })
+
         return res.status(200).json({
             "status": true,
             "data": "Task Created Successfully"
