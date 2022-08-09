@@ -5,7 +5,7 @@ const milestoneTaskList = require("../models/milestoneTaskList")
 
 const create = async (req, res) => {
     try {
-        const { milestoneId, taskList, tags, taskListStatus } = req.body
+        const { milestoneId, taskList, tags } = req.body
         const getMilestone = await milestone.find({ status: 1, _id: milestoneId })
         console.log(getMilestone[0].projectId)
         const newMilestoneTaskList = new milestoneTaskList({
@@ -31,95 +31,86 @@ const create = async (req, res) => {
 
 const milestoneTaskListBasedOnMilestone = async (req, res) => {
 
-    // try {
-    const { milestoneId } = req.body
-    let taskCount = 0;
-    const { count, page } = req.query
-    const skip = count * page
-    const getMilestoneTaskList = await milestoneTaskList.find({ status: 1, milestoneId: milestoneId }).populate({
-        "path": "taskId",
-        "model": "task"
-    })
+    try {
+        const { milestoneId } = req.body
+        const { count, page } = req.query
+        const skip = count * page
+        const getMilestoneTaskList = await milestoneTaskList.find({ status: 1, milestoneId: milestoneId }).populate({
+            "path": "taskId",
+            "model": "task"
+        })
+        let isTaskStatus = 0;
+        const milestonePromise = getMilestoneTaskList.map(async (taskList) => {
 
-    let completedTaskList = [];
-    let openTaskList = [];
-    let taskIdArray = ""
-    let isTaskStatus = 0;
-    const milestonePromise = getMilestoneTaskList.map(async (taskList) => {
-
-        // const tasklistPromise = taskList.taskId.map(async (id) => {
-        for (let i = 0; i < taskList.taskId.length; i++) {
-
-
-            if (taskList.taskId[i].taskStatus == "Open") {
-                console.log("hey")
-                isTaskStatus = 0
-                break
-            }
-            if (taskList.taskId[i].taskStatus == "Completed") {
-                console.log("hey1")
-                isTaskStatus = 1
-            }
-        }
-        // })
-        // await Promise.all(tasklistPromise)
-        console.log("outer", isTaskStatus)
-
-        if (isTaskStatus == 1) {
-            await milestoneTaskList.findByIdAndUpdate(taskList._id, {
-                $set: {
-                    taskListStatus: "Completed"
+            // const tasklistPromise = taskList.taskId.map(async (id) => {
+            for (let i = 0; i < taskList.taskId.length; i++) {
+                if (taskList.taskId[i].taskStatus == "Open") {
+                    isTaskStatus = 0
+                    break
                 }
-            })
-        } else {
-            console.log("false")
-            await milestoneTaskList.findByIdAndUpdate(taskList._id, {
-                $set: {
-                    taskListStatus: "Open"
+                if (taskList.taskId[i].taskStatus == "Completed") {
+                    isTaskStatus = 1
                 }
-            })
-        }
-        console.log(taskList._id)
+            }
+            // })
+            // await Promise.all(tasklistPromise)
 
-    })
-    await Promise.all(milestonePromise)
-    // console.log(openTaskList)
-    // console.log(completedTaskList)
-    // const promiseComplete = completedTaskList.map(async (id) => {
-    //     await milestoneTaskList.findByIdAndUpdate(id, {
-    //         $set: {
-    //             taskListStatus: "Completed"
-    //         }
-    //     })
-    // })
-    // await Promise.all(promiseComplete)
+            if (isTaskStatus == 1) {
+                await milestoneTaskList.findByIdAndUpdate(taskList._id, {
+                    $set: {
+                        taskListStatus: "Completed"
+                    }
+                })
+            } else {
+                await milestoneTaskList.findByIdAndUpdate(taskList._id, {
+                    $set: {
+                        taskListStatus: "Open"
+                    }
+                })
+            }
 
-    // const promiseOpen = openTaskList.map(async (id) => {
-    //     await milestoneTaskList.findByIdAndUpdate(id, {
-    //         $set: {
-    //             taskListStatus: "Open"
-    //         }
-    //     })
-    // })
-    // await Promise.all(promiseOpen)
-    // console.log(openTaskList)
-    // console.log(completedTaskList)
-    const getMilestoneTaskListAfter = await milestoneTaskList.find({ status: 1, milestoneId: milestoneId })
-    const getMilestoneTaskListCount = await milestoneTaskList.find({ status: 1, milestoneId: milestoneId }).count()
+        })
+        await Promise.all(milestonePromise)
+        const getMilestoneTaskListAfter = await milestoneTaskList.aggregate().match({
+            milestoneId: mongoose.Types.ObjectId(milestoneId)
+        }).project({
+            "_id": 1,
+            "taskList": 1,
+            "taskListStatus": 1
+        }).group({
+            "_id": "$taskListStatus",
+            "taskList": {
+                $push: "$$ROOT"
+            }
+        }).facet({
+            data: [{ $skip: Number(skip) }, { $limit: Number(count) }]
+        })
+        const getMilestoneTaskListCount = await milestoneTaskList.aggregate().match({
+            milestoneId: mongoose.Types.ObjectId(milestoneId)
+        }).project({
+            "_id": 1,
+            "taskList": 1,
+            "taskListStatus": 1
+        }).group({
+            "_id": "$taskListStatus",
+            "taskList": {
+                $push: "$$ROOT"
+            }
+        }).count("totalcount")
 
 
 
-    return res.status(200).json({
-        "status": true,
-        "data": getMilestoneTaskListAfter,
-        "totalCount": getMilestoneTaskListCount
-    })
-    // } catch (error) {
-    //     return res.status(400).json({
-    //         "status": false,
-    //         "message": "Failed to List"
-    //     })
-    // }
+        return res.status(200).json({
+            "status": true,
+            "data": getMilestoneTaskListAfter[0].data,
+            "totalCount": getMilestoneTaskListCount[0].totalcount
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": "Failed to List"
+        })
+    }
 }
 
 module.exports = { create, milestoneTaskListBasedOnMilestone }
