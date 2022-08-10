@@ -24,6 +24,8 @@ app.use("/task", cors(corsOptions), taskRoute)
 app.use("/issue", cors(corsOptions), issueRoute)
 app.use("/milestone", cors(corsOptions), milestoneRoute)
 app.use("/milestonetasklist", cors(corsOptions), milestoneTaskListRoute)
+
+
 mongoose.connect(process.env.MONGODB, (err) => {
     if (!err)
         console.log("Database Connected")

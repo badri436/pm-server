@@ -31,7 +31,7 @@ const create = async (req, res) => {
 
 const milestoneTaskListBasedOnMilestone = async (req, res) => {
 
-    try {
+    // try {
         const { milestoneId } = req.body
         const { count, page } = req.query
         const skip = count * page
@@ -40,6 +40,7 @@ const milestoneTaskListBasedOnMilestone = async (req, res) => {
             "model": "task"
         })
         let isTaskStatus = 0;
+        console.log("kdjf")
         const milestonePromise = getMilestoneTaskList.map(async (taskList) => {
 
             // const tasklistPromise = taskList.taskId.map(async (id) => {
@@ -76,7 +77,8 @@ const milestoneTaskListBasedOnMilestone = async (req, res) => {
         }).project({
             "_id": 1,
             "taskList": 1,
-            "taskListStatus": 1
+            "taskListStatus": 1,
+            "tags":1
         }).group({
             "_id": "$taskListStatus",
             "taskList": {
@@ -90,7 +92,7 @@ const milestoneTaskListBasedOnMilestone = async (req, res) => {
         }).project({
             "_id": 1,
             "taskList": 1,
-            "taskListStatus": 1
+            "taskListStatus": 1,
         }).group({
             "_id": "$taskListStatus",
             "taskList": {
@@ -105,12 +107,12 @@ const milestoneTaskListBasedOnMilestone = async (req, res) => {
             "data": getMilestoneTaskListAfter[0].data,
             "totalCount": getMilestoneTaskListCount[0].totalcount
         })
-    } catch (error) {
-        return res.status(400).json({
-            "status": false,
-            "message": "Failed to List"
-        })
-    }
+    // } catch (error) {
+    //     return res.status(400).json({
+    //         "status": false,
+    //         "message": "Failed to List"
+    //     })
+    // }
 }
 
 module.exports = { create, milestoneTaskListBasedOnMilestone }
