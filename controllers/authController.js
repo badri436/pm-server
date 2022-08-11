@@ -2,10 +2,12 @@ const user = require("../models/user")
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 require("dotenv/config")
+
 const nodemailer = require("nodemailer")
 const handlebars = require("handlebars")
 const fs = require("fs")
 const path = require("path")
+
 const config = require("../config")
 const indexFile = fs.readFileSync(path.resolve(__dirname, "../views/index.hbs"), 'utf8')
 const resetFile = fs.readFileSync(path.resolve(__dirname, "../views/Verify.hbs"), 'utf8')
@@ -53,14 +55,14 @@ const register = async (req, res) => {
     }
     transport.sendMail(message, (err) => {
         if (err) {
-            return res.status(400).json({
-                "status": false,
-                "message": err
-            })
+            console.log(err)
+        }
+        else {
+            console.log("Mail Sent!")
         }
     })
 
-    return res.status(200).json({
+    res.status(200).json({
         "status": true,
         "data": config.signup_success
     })
@@ -82,13 +84,17 @@ const resendMail = async (req, res) => {
             })
         }
         transport.sendMail(message, (err) => {
-            if (err) {
-                return res.status(400).json({
-                    "status": false,
-                    "message": err
-                })
-            }
+            if (err)
+                console.log(err)
+            else
+                console.log("Mail Sent!")
         })
+
+        // await user.findByIdAndUpdate(getUser.id, {
+        //     $set: {
+        //         verifyStatus: "Success"
+        //     }
+        // })
     }
     else {
         return res.status(400).json({
@@ -97,7 +103,7 @@ const resendMail = async (req, res) => {
         })
     }
 
-    return res.status(200).json({
+    res.status(200).json({
         "status": true,
         "data": config.mail_sent
     })
@@ -155,8 +161,9 @@ const login = async(req,res) => {
         if(getUser){
             if(getUser.verifyStatus === "success"){
                 const passwordCheck = await bcrypt.compare(password,getUser.password)
+    
                 if(passwordCheck){
-                    const token = jwt.sign({id:getUser._id,email:getUser.email},process.env.TOKENID,{expiresIn:"1d"})
+                    const token = jwt.sign({userId:getUser._id, email:getUser.email, name:getUser.name},process.env.TOKENID,{expiresIn:"1d"})
                     res.status(200).json({
                         "status":true,
                         "data": token

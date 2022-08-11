@@ -6,16 +6,27 @@ const corsOptions = {
     credentials: true,
     optionSuccessStatus: 200
 }
-app.use(cors(corsOptions));
+
 const authRoute = require('./routes/authRoute')
+const projectRoute = require('./routes/projectRoute')
+const taskRoute = require('./routes/taskRoute')
+const issueRoute = require('./routes/issueRoute')
+const milestoneRoute = require('./routes/milestoneRoute')
+const milestoneTaskListRoute = require('./routes/milestoneTaskListRoute')
 const bodyParser = require('body-parser')
 const mongoose = require('mongoose')
 require('dotenv/config')
-app.get("/test", async (req, res) => {
-    res.send("hii")
-})
+
 app.use(bodyParser.json({ urlencoded: true }))
-app.use("/auth", authRoute)
+app.use("/auth", cors(corsOptions), authRoute)
+app.use("/project", cors(corsOptions), projectRoute)
+app.use("/task", cors(corsOptions), taskRoute)
+app.use("/issue", cors(corsOptions), issueRoute)
+app.use("/milestone", cors(corsOptions), milestoneRoute)
+app.use("/milestonetasklist", cors(corsOptions), milestoneTaskListRoute)
+app.get("/hello", async (req, res) => {
+    res.write("hi")
+})
 
 mongoose.connect(process.env.MONGODB, (err) => {
     if (!err)
