@@ -11,7 +11,9 @@ const authRoute = require('./routes/authRoute')
 const bodyParser = require('body-parser')
 const mongoose = require('mongoose')
 require('dotenv/config')
-
+app.get("/test", async (req, res) => {
+    res.send("hii")
+})
 app.use(bodyParser.json({ urlencoded: true }))
 app.use("/auth", authRoute)
 
