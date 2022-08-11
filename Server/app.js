@@ -25,7 +25,7 @@ app.use("/issue", cors(corsOptions), issueRoute)
 app.use("/milestone", cors(corsOptions), milestoneRoute)
 app.use("/milestonetasklist", cors(corsOptions), milestoneTaskListRoute)
 app.get("/test", async (req, res) => {
-    res.send("hi")
+    res.write("hi")
 })
 
 mongoose.connect(process.env.MONGODB, (err) => {
