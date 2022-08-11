@@ -189,6 +189,7 @@ const groupByProject = async (req, res) => {
 const individualTaskList = async (req, res) => {
     try {
         const { taskId } = req.body
+        console.log("hi")
         const getTask = await task.findById(taskId).populate({ path: "projectId", model: "project", select: { _id: 1, projectName: 1 } }).populate({ path: "assignTo", model: "user", select: { _id: 1, name: 1 } })
         return res.status(200).json({
             "status": true,
@@ -202,4 +203,56 @@ const individualTaskList = async (req, res) => {
     }
 }
 
-module.exports = { create, listBasedOnUser, listBasedOnProject, groupByStatus, groupByProject, individualTaskList }
+const updateTask = async (req, res) => {
+    try {
+        const { taskStatus, startDate, endDate, description, taskId, priority } = req.body
+        if (taskStatus != "" && taskStatus != null) {
+            await task.findByIdAndUpdate(taskId, {
+                $set: {
+                    taskStatus
+                }
+            })
+        }
+        if (startDate != "" && startDate != null) {
+            await task.findByIdAndUpdate(taskId, {
+                $set: {
+                    startDate
+                }
+            })
+        }
+        if (endDate != "" && endDate != null) {
+            await task.findByIdAndUpdate(taskId, {
+                $set: {
+                    taskStatus
+                }
+            })
+        }
+        if (description != "" && description != null) {
+            await task.findByIdAndUpdate(taskId, {
+                $set: {
+                    description
+                }
+            })
+        }
+        if (priority != "" && priority != null) {
+            await task.findByIdAndUpdate(taskId, {
+                $set: {
+                    priority
+                }
+            })
+        }
+
+        return res.status(200).json({
+            "status": true,
+            "data": "task updated successfully"
+        })
+
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": "Failed"
+        })
+    }
+}
+
+module.exports = { create, listBasedOnUser, listBasedOnProject, groupByStatus, groupByProject, individualTaskList, updateTask }

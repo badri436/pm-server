@@ -8,6 +8,7 @@ taskRoute.get("/listbasedonuser", middle, taskController.listBasedOnUser)
 taskRoute.get("/listbasedonproject", middle, taskController.listBasedOnProject)
 taskRoute.post("/create", middle, taskController.create)
 taskRoute.post("/individualTask", middle, taskController.individualTaskList)
+taskRoute.post("/update", middle, taskController.updateTask)
 taskRoute.post("/groupbystatus", middle, taskController.groupByStatus)
 
 
