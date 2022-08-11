@@ -24,7 +24,7 @@ app.use("/task", cors(corsOptions), taskRoute)
 app.use("/issue", cors(corsOptions), issueRoute)
 app.use("/milestone", cors(corsOptions), milestoneRoute)
 app.use("/milestonetasklist", cors(corsOptions), milestoneTaskListRoute)
-app.get("/test", async (req, res) => {
+app.get("/hello", async (req, res) => {
     res.write("hi")
 })
 
