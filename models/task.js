@@ -1,48 +1,53 @@
 const mongoose = require('mongoose')
 
 const taskSchema = mongoose.Schema({
-    taskName:{
+    taskName: {
         type: String,
         required: true
     },
-    description:{
+    description: {
         type: String,
         required: false
     },
-    assignTo:{
+    assignTo: {
         type: mongoose.Types.ObjectId,
-        ref:"user"
+        ref: "user"
     },
-    userId:{
-        type:mongoose.Types.ObjectId,
-        ref:"user"
+    userId: {
+        type: mongoose.Types.ObjectId,
+        ref: "user"
     },
-    projectId:{
-        type:mongoose.Types.ObjectId,
-        ref:"project"
+    projectId: {
+        type: mongoose.Types.ObjectId,
+        ref: "project"
     },
-    startDate:{
+    startDate: {
         type: String,
         required: true
     },
-    endDate:{
+    endDate: {
         type: String,
         required: true
     },
-    priority:{
+    priority: {
         type: String,
         required: true,
-        enum: ["Low","Medium","High"]
+        enum: ["Low", "Medium", "High"]
     },
-    taskStatus:{
+    taskStatus: {
         type: String,
         required: true,
-        enum: ["Open", "In Progress", "To be Tested", "Completed"]
+        enum: ["Open", "In Progress", "To be Tested", "Closed"]
     },
-    status:{
+    taskListId: {
+        type: mongoose.Types.ObjectId,
+        ref: "milestoneTaskList",
+        required: true
+    },
+    status: {
         type: Number,
         default: 1
     }
-},{ timestamps: true })
+}, { timestamps: true })
 
 module.exports = mongoose.model("task", taskSchema)

@@ -13,6 +13,7 @@ const taskRoute = require('./routes/taskRoute')
 const issueRoute = require('./routes/issueRoute')
 const milestoneRoute = require('./routes/milestoneRoute')
 const milestoneTaskListRoute = require('./routes/milestoneTaskListRoute')
+const notificationRoute = require('./routes/notificationRoute')
 const bodyParser = require('body-parser')
 const mongoose = require('mongoose')
 require('dotenv/config')
@@ -24,9 +25,11 @@ app.use("/task", cors(corsOptions), taskRoute)
 app.use("/issue", cors(corsOptions), issueRoute)
 app.use("/milestone", cors(corsOptions), milestoneRoute)
 app.use("/milestonetasklist", cors(corsOptions), milestoneTaskListRoute)
+app.use("/notification", cors(corsOptions), notificationRoute)
 app.get("/hello", async (req, res) => {
     res.write("hi")
 })
+
 
 mongoose.connect(process.env.MONGODB, (err) => {
     if (!err)

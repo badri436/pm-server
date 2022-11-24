@@ -1,42 +1,50 @@
 const mongoose = require('mongoose')
 
 const projectSchema = mongoose.Schema({
-    projectName:{
+    projectName: {
         type: String,
         required: true
     },
-    percentage:{
-        type:Number,
+    percentage: {
+        type: Number,
         required: false
     },
-    owner:{
+    owner: {
         type: String,
-        required:true
-    },
-    userId:{
-        type:mongoose.Types.ObjectId,
-        ref:"user"
-    },
-    projectStatus:{
-        type:String,
         required: true
-    }, 
-    tags:{
-        type:String,
+    },
+    userId: {
+        type: mongoose.Types.ObjectId,
+        ref: "user"
+    },
+    milestoneId: [{
+        type: mongoose.Types.ObjectId,
+        ref: "milestone"
+    }],
+    issueId: [{
+        type: mongoose.Types.ObjectId,
+        ref: "issues"
+    }],
+    projectStatus: {
+        type: String,
+        required: true
+    },
+    tags: {
+        type: String,
         required: false
     },
-    startDate:{
+    startDate: {
         type: String,
         required: true
     },
-    endDate:{
+    endDate: {
         type: String,
         required: true
     },
-    status:{
+    status: {
         type: Number,
         default: 1
     }
-},{ timestamps: true })
+}, { timestamps: true })
 
 module.exports = mongoose.model("project", projectSchema)

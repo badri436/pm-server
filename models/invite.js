@@ -1,35 +1,39 @@
 const mongoose = require('mongoose')
 
 const inviteSchema = mongoose.Schema({
-    senderId:{
-        type:mongoose.Types.ObjectId,
-        ref:"user"
+    senderId: {
+        type: mongoose.Types.ObjectId,
+        ref: "user"
     },
-    receiverId:{
-        type:mongoose.Types.ObjectId,
-        ref:"user"
+    receiverId: {
+        type: mongoose.Types.ObjectId,
+        ref: "user"
     },
-    projectId:{
-        type:mongoose.Types.ObjectId,
-        ref:"project"
+    projectDetailsId: {
+        type: mongoose.Types.ObjectId,
+        ref: "projectDetails"
     },
-    receiverMail:{
-        type:String,
-        required:true
+    projectId: {
+        type: mongoose.Types.ObjectId,
+        ref: "project"
     },
-    role:{
-        type:String,
-        required:true
+    receiverMail: {
+        type: String,
+        required: true
     },
-    inviteStatus:{
+    role: {
+        type: String,
+        required: true
+    },
+    inviteStatus: {
         type: Number,
-        required:true,
-        default:0
+        required: true,
+        default: 0
     },
-    status:{
+    status: {
         type: Number,
         default: 1
     }
-},{ timestamps: true })
+}, { timestamps: true })
 
 module.exports = mongoose.model("invite", inviteSchema)

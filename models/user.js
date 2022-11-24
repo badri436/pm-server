@@ -21,6 +21,22 @@ const userSchema = mongoose.Schema({
         type: String,
         required: false
     },
+    profileImg: {
+        type: String,
+        required: false
+    },
+    address: {
+        type: String,
+        required: false
+    },
+    designation: {
+        type: String,
+        required: false
+    },
+    company: {
+        type: String,
+        required: false
+    },
     status: {
         type: Number,
         default: 1

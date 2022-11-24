@@ -29,7 +29,15 @@ const milestoneSchema = mongoose.Schema({
     endDate:{
         type: String,
         required: true
-    }
+    },
+    status:{
+        type:Number,
+        default:1
+    },
+    comments:[{
+        type:mongoose.Types.ObjectId,
+        ref:"comment"
+    }]
 },{timestamps:true})
 
 module.exports = mongoose.model("milestone", milestoneSchema)

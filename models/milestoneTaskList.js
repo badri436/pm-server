@@ -28,8 +28,12 @@ const milestoneTaskListSchema = mongoose.Schema({
         type: String,
         required: true,
         default: "Open",
-        enum: ["Open", "Completed"]
+        enum: ["Open", "Closed"]
     },
+    comments:[{
+        type:mongoose.Types.ObjectId,
+        ref:"comment"
+    }],
     status: {
         type: Number,
         default: 1

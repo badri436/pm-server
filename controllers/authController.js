@@ -1,14 +1,17 @@
 const user = require("../models/user")
+const projectDetails = require("../models/projectDetails")
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcryptjs')
 require("dotenv/config")
-
+const { OAuth2Client } = require('google-auth-library')
+const client = new OAuth2Client(process.env.CLIENT_ID)
 const nodemailer = require("nodemailer")
 const handlebars = require("handlebars")
 const fs = require("fs")
 const path = require("path")
 
 const config = require("../config")
+const { populate } = require("../models/user")
 const indexFile = fs.readFileSync(path.resolve(__dirname, "../views/index.hbs"), 'utf8')
 const resetFile = fs.readFileSync(path.resolve(__dirname, "../views/Verify.hbs"), 'utf8')
 const verifyTemplate = handlebars.compile(indexFile)
@@ -20,10 +23,120 @@ let transport = nodemailer.createTransport({
         pass: process.env.PASSWORD
     }
 })
+const googleSigin = async (req, res) => {
+    try {
+        const { token } = req.body
+        const ticket = await client.verifyIdToken({
+            idToken: token,
+            audience: process.env.CLIENT_ID
+        });
+        const getUserData = ticket.getPayload()
+
+        const getUser = await user.findOne({ email: getUserData.email })
+        if (getUser == null) {
+            let defaultPassword = await bcrypt.hash(`${Date.now()}`, 10);
+
+            const newUser = new user({
+                name: getUserData.name,
+                email: getUserData.email,
+                password: defaultPassword,
+                verifyStatus: "success"
+            })
+            await newUser.save()
+
+            const token = jwt.sign({ userId: newUser._id, email: newUser.email, name: newUser.name }, process.env.TOKENID, { expiresIn: "1d" })
+            return res.status(200).json({
+                "status": true,
+                "data": token,
+                "user": {
+                    "userId": getUser._id
+                }
+            })
+        } else {
+
+            if (getUser.verifyStatus == "pending") {
+                await user.findByIdAndUpdate(getUser._id, {
+                    $set: {
+                        verifyStatus: "success"
+                    }
+                })
+                const token = jwt.sign({ userId: getUser._id, email: getUser.email, name: getUser.name }, process.env.TOKENID, { expiresIn: "1d" })
+                return res.status(200).json({
+                    "status": true,
+                    "data": token,
+                    "user": {
+                        "userId": getUser._id
+                    }
+                })
+            }
+            const token = jwt.sign({ userId: getUser._id, email: getUser.email, name: getUser.name }, process.env.TOKENID, { expiresIn: "1d" })
+            return res.status(200).json({
+                "status": true,
+                "data": token,
+                "user": {
+                    "userId": getUser._id,
+                    "image": getUser.profileImg
+                }
+            })
+
+        }
+    } catch (error) {
+        res.status(400).json({
+            "status": false,
+            "message": error
+        })
+    }
+}
+
+const updateProfile = async (req, res) => {
+    try {
+        const { address, profileImg, role, company } = req.body
+        console.log(profileImg)
+        const { userId } = req.user
+        if (address !== "" && address !== null) {
+            await user.findByIdAndUpdate(userId, {
+                $set: {
+                    "address": address
+                }
+            })
+        }
+        if (profileImg !== "" && profileImg !== null) {
+            await user.findByIdAndUpdate(userId, {
+                $set: {
+                    "profileImg": profileImg
+                }
+            })
+        }
+        if (role !== "" && role !== null) {
+            await user.findByIdAndUpdate(userId, {
+                $set: {
+                    "designation": role
+                }
+            })
+        }
+        if (company !== "" && company !== null) {
+            await user.findByIdAndUpdate(userId, {
+                $set: {
+                    "company": company
+                }
+            })
+        }
+
+        return res.status(200).json({
+            "status": true,
+            "data": "updated successfully"
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": error
+        })
+    }
+}
 
 const register = async (req, res) => {
     const { name, email, password } = req.body
-    const getUser = await user.findOne({ email })
+    const getUser = await user.findOne({ email: email })
 
     if (getUser) {
         return res.status(400).json({
@@ -154,45 +267,49 @@ const activate = async (req, res) => {
 }
 
 
-const login = async(req,res) => {
-    try{
+const login = async (req, res) => {
+    try {
         const { email, password } = req.body
-        const getUser = await user.findOne({email})
-        if(getUser){
-            if(getUser.verifyStatus === "success"){
-                const passwordCheck = await bcrypt.compare(password,getUser.password)
-    
-                if(passwordCheck){
-                    const token = jwt.sign({userId:getUser._id, email:getUser.email, name:getUser.name},process.env.TOKENID,{expiresIn:"1d"})
+        const getUser = await user.findOne({ email })
+        if (getUser) {
+            if (getUser.verifyStatus === "success") {
+                const passwordCheck = await bcrypt.compare(password, getUser.password)
+
+                if (passwordCheck) {
+                    const token = jwt.sign({ userId: getUser._id, email: getUser.email, name: getUser.name }, process.env.TOKENID, { expiresIn: "1d" })
                     res.status(200).json({
-                        "status":true,
-                        "data": token
-                    })
-                }        
-                else{
-                    res.status(400).json({
-                        "status":false,
-                        "message":config.password_incorrect
+                        "status": true,
+                        "data": token,
+                        "user": {
+                            "userId": getUser._id,
+                            "image": getUser.profileImg
+                        }
                     })
                 }
-            }        
-            else{
+                else {
+                    res.status(400).json({
+                        "status": false,
+                        "message": config.password_incorrect
+                    })
+                }
+            }
+            else {
                 res.status(400).json({
-                    "status":false,
-                    "message":config.account_verification_pending
+                    "status": false,
+                    "message": config.account_verification_pending
                 })
             }
         }
-        else{
+        else {
             return res.status(400).json({
-                "status":false,
-                "message":config.user_not_exist
+                "status": false,
+                "message": config.user_not_exist
             })
         }
-    }catch(error){
+    } catch (error) {
         res.status(400).json({
-            "status":false,
-            "message":error
+            "status": false,
+            "message": error
         })
     }
 }
@@ -275,6 +392,53 @@ const resetPassword = async (req, res) => {
         })
     }
 }
+const changePassword = async (req, res) => {
+    try {
+        const { oldPassword, newPassword } = req.body
+        const { userId } = req.user
+        const getUser = await user.findById(userId)
+        const passwordCheck = await bcrypt.compare(oldPassword, getUser.password)
+        if (passwordCheck) {
+            await user.findByIdAndUpdate(userId, {
+                $set: {
+                    "password": newPassword
+                }
+            })
+
+            return res.status(200).json({
+                "status": true,
+                "data": "password changed successfully"
+            })
+        } else {
+            return res.status(400).json({
+                "status": false,
+                "message": "old password mismatched"
+            })
+        }
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": error
+        })
+    }
+}
+const listUser = async (req, res) => {
+    try {
+        const { userId } = req.user
+
+        const getUser = await user.findById(userId)
+        return res.status(200).json({
+            "status": true,
+            "data": getUser
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": error
+        })
+    }
+}
+
 const getDecoded = (token) => {
     return new Promise((resolve) => {
         jwt.verify(token, process.env.TOKENID, async (err, decoded) => {
@@ -298,4 +462,27 @@ const getDecodedPassword = (token) => {
     })
 }
 
-module.exports = { register, resendMail, activate, forgetPassword, resetPassword, login }
+const listAllUser = async (req, res) => {
+    // try {
+        const {projectDetailsId} = req.body
+        let getUsers = []
+        const getProjectDetails = await projectDetails.findById(projectDetailsId).select({userId:1, collaboratedUsers:1}).populate({path:"collaboratedUsers", model:"projectDetails", select:{_id:1, userId:1}, populate:{path:"userId", model:"user", select:{_id:1, name:1}}}).populate({path:"userId", model:"user", select:{_id:1, name:1}})
+        getProjectDetails.collaboratedUsers.map((user) => {
+           getUsers.push(user.userId)
+        })
+        getUsers.push(getProjectDetails.userId)
+        console.log(getUsers)
+        
+        return res.status(200).json({
+            "status": true,
+            "data": getUsers
+        })
+    // } catch (error) {
+    //     return res.status(400).json({
+    //         "status": false,
+    //         "message": error
+    //     })
+    // }
+}
+
+module.exports = { register, changePassword, listUser, listAllUser, updateProfile, resendMail, googleSigin, activate, forgetPassword, resetPassword, login }

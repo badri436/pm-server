@@ -15,7 +15,13 @@ const issueSchema = mongoose.Schema({
     },
     projectId:{
         type:mongoose.Types.ObjectId,
-        ref:"project"
+        ref:"project",
+        required: false
+    },
+    milestoneTasklistId:{
+        type:mongoose.Types.ObjectId,
+        ref:"milestonetasklist",
+        required: false
     },
     issueStatus:{
         type: String,

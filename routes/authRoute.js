@@ -1,13 +1,17 @@
 const express = require('express')
 const authRoute = express.Router()
 const authController = require('../controllers/authController')
+const auth = require("../middleware/middleware")
 
+authRoute.get("/listuser", auth, authController.listUser)
+authRoute.post("/listalluser", auth, authController.listAllUser)
 authRoute.post("/register", authController.register)
 authRoute.post("/resendMail", authController.resendMail)
 authRoute.post("/accept", authController.activate)
+authRoute.post("/changepassword", auth, authController.changePassword)
 authRoute.post("/forget-password", authController.forgetPassword)
 authRoute.post("/resetPassword", authController.resetPassword)
 authRoute.post("/login", authController.login)
-
-
+authRoute.post("/api/v1/auth/google", authController.googleSigin)
+authRoute.post("/updateprofile", auth, authController.updateProfile)
 module.exports = authRoute
