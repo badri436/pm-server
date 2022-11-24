@@ -464,16 +464,25 @@ const getDecodedPassword = (token) => {
 
 const listAllUser = async (req, res) => {
     try {
-        const { projectDetailsId } = req.body
+        const { projectId } = req.body
         let getUsers = []
-        const getProjectDetails = await projectDetails.findById(projectDetailsId).select({ userId: 1, collaboratedUsers: 1 }).populate({ path: "collaboratedUsers", model: "projectDetails", select: { _id: 1, userId: 1 }, populate: { path: "userId", model: "user", select: { _id: 1, name: 1 } } }).populate({ path: "userId", model: "user", select: { _id: 1, name: 1 } })
-        if (getProjectDetails.collaboratedUsers.length > 0) {
-            getProjectDetails.collaboratedUsers.map((user) => {
-                getUsers.push(user.userId)
-            })
-            getUsers.push(getProjectDetails.userId)
-        }
+        if (projectId !== "") {
 
+
+            const getProjectDetails = await projectDetails.find({ projectId: projectId }).select({ userId: 1, collaboratedUsers: 1 }).populate({ path: "collaboratedUsers", model: "projectDetails", select: { _id: 1, userId: 1 }, populate: { path: "userId", model: "user", select: { _id: 1, name: 1 } } }).populate({ path: "userId", model: "user", select: { _id: 1, name: 1 } })
+            console.log(getProjectDetails)
+            if (getProjectDetails.length > 0) {
+                getProjectDetails.map((user) => {
+                    getUsers.push(user.userId)
+                })
+
+            }
+        } else {
+            return res.status(400).json({
+                "status": false,
+                "data": "error"
+            })
+        }
 
 
         return res.status(200).json({
