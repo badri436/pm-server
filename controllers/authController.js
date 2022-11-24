@@ -463,26 +463,29 @@ const getDecodedPassword = (token) => {
 }
 
 const listAllUser = async (req, res) => {
-    // try {
-        const {projectDetailsId} = req.body
+    try {
+        const { projectDetailsId } = req.body
         let getUsers = []
-        const getProjectDetails = await projectDetails.findById(projectDetailsId).select({userId:1, collaboratedUsers:1}).populate({path:"collaboratedUsers", model:"projectDetails", select:{_id:1, userId:1}, populate:{path:"userId", model:"user", select:{_id:1, name:1}}}).populate({path:"userId", model:"user", select:{_id:1, name:1}})
-        getProjectDetails.collaboratedUsers.map((user) => {
-           getUsers.push(user.userId)
-        })
-        getUsers.push(getProjectDetails.userId)
-        console.log(getUsers)
-        
+        const getProjectDetails = await projectDetails.findById(projectDetailsId).select({ userId: 1, collaboratedUsers: 1 }).populate({ path: "collaboratedUsers", model: "projectDetails", select: { _id: 1, userId: 1 }, populate: { path: "userId", model: "user", select: { _id: 1, name: 1 } } }).populate({ path: "userId", model: "user", select: { _id: 1, name: 1 } })
+        if (getProjectDetails.collaboratedUsers.length > 0) {
+            getProjectDetails.collaboratedUsers.map((user) => {
+                getUsers.push(user.userId)
+            })
+            getUsers.push(getProjectDetails.userId)
+        }
+
+
+
         return res.status(200).json({
             "status": true,
             "data": getUsers
         })
-    // } catch (error) {
-    //     return res.status(400).json({
-    //         "status": false,
-    //         "message": error
-    //     })
-    // }
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": error
+        })
+    }
 }
 
 module.exports = { register, changePassword, listUser, listAllUser, updateProfile, resendMail, googleSigin, activate, forgetPassword, resetPassword, login }
