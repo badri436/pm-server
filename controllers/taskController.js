@@ -122,10 +122,10 @@ const createTaskBasedOnMilestone = async (req, res) => {
 const countTask = async (req, res) => {
     try {
         const { userId } = req.user
-        const getAllTask = await task.find({ userId: userId }).populate({ path: "projectId", model: "project", select: { "projectName": 1 } })
-        const getOpenTask = await task.find({ userId: userId, "taskStatus": "Open" }).populate({ path: "projectId", model: "project", select: { "projectName": 1 } })
-        const getAllIssues = await issue.find({ userId: userId }).populate({ path: "projectId", model: "project", select: { "projectName": 1 } })
-        const getOpenIssue = await issue.find({ userId: userId, "issueStatus": "Open" }).populate({ path: "projectId", model: "project", select: { "projectName": 1 } })
+        const getAllTask = await task.find({ userId: userId, status: 1 }).populate({ path: "projectId", model: "project", select: { "projectName": 1 } })
+        const getOpenTask = await task.find({ userId: userId, status: 1, "taskStatus": "Open" }).populate({ path: "projectId", model: "project", select: { "projectName": 1 } })
+        const getAllIssues = await issue.find({ userId: userId, status: 1 }).populate({ path: "projectId", model: "project", select: { "projectName": 1 } })
+        const getOpenIssue = await issue.find({ userId: userId, status: 1, "issueStatus": "Open" }).populate({ path: "projectId", model: "project", select: { "projectName": 1 } })
         const getUser = await user.findById(userId)
         return res.status(200).json({
             "status": true,
