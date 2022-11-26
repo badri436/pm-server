@@ -196,59 +196,59 @@ const groupByStatusUser = async (req, res) => {
 
 
 const updateIssue = async (req, res) => {
-    // try {
-    const { issueStatus, startDate, endDate, description, issueId } = req.body
-    if (issueStatus != "" && issueStatus != null) {
-        await issues.findByIdAndUpdate(issueId, {
-            $set: {
-                issueStatus
-            }
-        })
-        return res.status(200).json({
-            "status": true,
-            "data": "Issue updated successfully"
-        })
-    }
-    if (startDate != "" && startDate != null) {
-        await issues.findByIdAndUpdate(issueId, {
-            $set: {
-                startDate
-            }
-        })
-        return res.status(200).json({
-            "status": true,
-            "data": "startDate updated successfully"
-        })
-    }
-    if (endDate != "" && endDate != null) {
-        await issues.findByIdAndUpdate(issueId, {
-            $set: {
-                endDate
-            }
-        })
-        return res.status(200).json({
-            "status": true,
-            "data": "endDate updated successfully"
-        })
-    }
-    if (description != "" && description != null) {
-        await issues.findByIdAndUpdate(issueId, {
-            $set: {
-                description
-            }
-        })
-        return res.status(200).json({
-            "status": true,
-            "data": "description updated successfully"
-        })
-    }
+    try {
+        const { issueStatus, startDate, endDate, description, issueId } = req.body
+        if (issueStatus != "" && issueStatus != null) {
+            await issues.findByIdAndUpdate(issueId, {
+                $set: {
+                    issueStatus
+                }
+            })
+            return res.status(200).json({
+                "status": true,
+                "data": "Issue updated successfully"
+            })
+        }
+        if (startDate != "" && startDate != null) {
+            await issues.findByIdAndUpdate(issueId, {
+                $set: {
+                    startDate
+                }
+            })
+            return res.status(200).json({
+                "status": true,
+                "data": "startDate updated successfully"
+            })
+        }
+        if (endDate != "" && endDate != null) {
+            await issues.findByIdAndUpdate(issueId, {
+                $set: {
+                    endDate
+                }
+            })
+            return res.status(200).json({
+                "status": true,
+                "data": "endDate updated successfully"
+            })
+        }
+        if (description != "" && description != null) {
+            await issues.findByIdAndUpdate(issueId, {
+                $set: {
+                    description
+                }
+            })
+            return res.status(200).json({
+                "status": true,
+                "data": "description updated successfully"
+            })
+        }
 
-    // } catch (error) {
-    //     return res.status(400).json({
-    //         "status": false,
-    //         "message": "Failed"
-    //     })
-    // }
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": "Failed"
+        })
+    }
 }
 
 const individualIssueList = async (req, res) => {
@@ -271,36 +271,36 @@ const individualIssueList = async (req, res) => {
 
 const createIssueBasedOnMilestone = async (req, res) => {
 
-    // try{
-    const { issue, description, milestoneTasklistId, startDate, endDate } = req.body
-    const { userId } = req.user
-    console.log(milestoneTasklistId)
-    const getProjectId = await milestoneTaskList.findById(mongoose.Types.ObjectId(milestoneTasklistId))
-    console.log(getProjectId)
+    try {
+        const { issue, description, milestoneTasklistId, startDate, endDate } = req.body
+        const { userId } = req.user
+        console.log(milestoneTasklistId)
+        const getProjectId = await milestoneTaskList.findById(mongoose.Types.ObjectId(milestoneTasklistId))
+        console.log(getProjectId)
 
-    const newIssue = new issues({
-        issue,
-        description,
-        userId,
-        projectId: getProjectId.projectId,
-        milestoneTasklistId,
-        issueStatus: "Open",
-        startDate,
-        endDate,
-    })
+        const newIssue = new issues({
+            issue,
+            description,
+            userId,
+            projectId: getProjectId.projectId,
+            milestoneTasklistId,
+            issueStatus: "Open",
+            startDate,
+            endDate,
+        })
 
-    await newIssue.save();
+        await newIssue.save();
 
-    return res.status(200).json({
-        "status": true,
-        "data": "Issue Created Successfully"
-    })
-    // }catch(error){
-    //     return res.status(400).json({
-    //         "status":false,
-    //         "message":"Issue Creation Failed"
-    //     })
-    // }
+        return res.status(200).json({
+            "status": true,
+            "data": "Issue Created Successfully"
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": "Issue Creation Failed"
+        })
+    }
 }
 
 const issueBasedOnMilestone = async (req, res) => {

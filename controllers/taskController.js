@@ -8,42 +8,57 @@ const notification = require('../models/notification')
 const user = require('../models/user')
 
 const create = async (req, res) => {
-    // try {
-    const { taskName, description, projectId, startDate, endDate, priority, taskListId, assignTo } = req.body
-    const { userId } = req.user
-    const getUser = await user.findById(mongoose.Types.ObjectId(userId))
-    const getReceiver = await user.findById(mongoose.Types.ObjectId(assignTo))
-    const getProject = await project.findById(mongoose.Types.ObjectId(projectId))
+    try {
+        const { taskName, description, projectId, startDate, endDate, priority, taskListId, assignTo } = req.body
+        const { userId } = req.user
+        const getUser = await user.findById(mongoose.Types.ObjectId(userId))
+        const getReceiver = await user.findById(mongoose.Types.ObjectId(assignTo))
+        const getProject = await project.findById(mongoose.Types.ObjectId(projectId))
 
-    const newTask = new task({
-        userId,
-        taskName,
-        description,
-        taskListId: taskListId,
-        assignTo: assignTo,
-        projectId,
-        startDate,
-        endDate,
-        taskStatus: "Open",
-        priority,
-    })
+        const newTask = new task({
+            userId,
+            taskName,
+            description,
+            taskListId: taskListId,
+            assignTo: assignTo,
+            projectId,
+            startDate,
+            endDate,
+            taskStatus: "Open",
+            priority,
+        })
 
-    await newTask.save();
+        await newTask.save();
 
-    await milestoneTaskList.findByIdAndUpdate(taskListId, {
-        $push: {
-            taskId: newTask._id
-        }
-    })
+        await milestoneTaskList.findByIdAndUpdate(taskListId, {
+            $push: {
+                taskId: newTask._id
+            }
+        })
 
-    if (!(mongoose.Types.ObjectId(userId).equals(mongoose.Types.ObjectId(assignTo)))) {
-        if (mongoose.Types.ObjectId(getProject.userId).equals(mongoose.Types.ObjectId(userId))) {
-            const newNotification = new notification({
-                senderId: userId,
-                receiverId: assignTo,
-                message: `${getUser.name} assigned a task to you`
-            })
-            await newNotification.save();
+        if (!(mongoose.Types.ObjectId(userId).equals(mongoose.Types.ObjectId(assignTo)))) {
+            if (mongoose.Types.ObjectId(getProject.userId).equals(mongoose.Types.ObjectId(userId))) {
+                const newNotification = new notification({
+                    senderId: userId,
+                    receiverId: assignTo,
+                    message: `${getUser.name} assigned a task to you`
+                })
+                await newNotification.save();
+            } else {
+                const newNotification = new notification({
+                    senderId: userId,
+                    receiverId: getProject.userId,
+                    message: `${getUser.name} assigned a task to ${getReceiver.name}`
+                })
+                await newNotification.save();
+
+                const newNotification1 = new notification({
+                    senderId: userId,
+                    receiverId: assignTo,
+                    message: `${getUser.name} assigned a task to you`
+                })
+                await newNotification1.save();
+            }
         } else {
             const newNotification = new notification({
                 senderId: userId,
@@ -51,33 +66,18 @@ const create = async (req, res) => {
                 message: `${getUser.name} assigned a task to ${getReceiver.name}`
             })
             await newNotification.save();
-
-            const newNotification1 = new notification({
-                senderId: userId,
-                receiverId: assignTo,
-                message: `${getUser.name} assigned a task to you`
-            })
-            await newNotification1.save();
         }
-    } else {
-        const newNotification = new notification({
-            senderId: userId,
-            receiverId: getProject.userId,
-            message: `${getUser.name} assigned a task to ${getReceiver.name}`
-        })
-        await newNotification.save();
-    }
 
-    return res.status(200).json({
-        "status": true,
-        "data": "Task Created Successfully"
-    })
-    // } catch (error) {
-    //     return res.status(400).json({
-    //         "status": false,
-    //         "message": "Task Creation Failed!"
-    //     })
-    // }
+        return res.status(200).json({
+            "status": true,
+            "data": "Task Created Successfully"
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": "Task Creation Failed!"
+        })
+    }
 }
 
 const createTaskBasedOnMilestone = async (req, res) => {

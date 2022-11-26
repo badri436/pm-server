@@ -125,39 +125,39 @@ const list = async (req, res) => {
 }
 
 const create = async (req, res) => {
-    // try {
-    const { projectName, projectStatus, tags, startDate, endDate } = req.body
-    const { userId, name } = req.user
-    const newProject = new project({
-        projectName,
-        owner: name,
-        userId: userId,
-        projectStatus,
-        tags,
-        startDate,
-        endDate
-    })
-    await newProject.save();
+    try {
+        const { projectName, projectStatus, tags, startDate, endDate } = req.body
+        const { userId, name } = req.user
+        const newProject = new project({
+            projectName,
+            owner: name,
+            userId: userId,
+            projectStatus,
+            tags,
+            startDate,
+            endDate
+        })
+        await newProject.save();
 
-    const newProjectDetail = new projectDetails({
-        userId: userId,
-        role: "Owner",
-        projectId: newProject._id,
-        type: "Own",
-    })
+        const newProjectDetail = new projectDetails({
+            userId: userId,
+            role: "Owner",
+            projectId: newProject._id,
+            type: "Own",
+        })
 
-    await newProjectDetail.save();
+        await newProjectDetail.save();
 
-    return res.status(200).json({
-        "status": true,
-        "data": "Project Created Successfully!"
-    })
-    // } catch (error) {
-    //     return res.status(400).json({
-    //         "status": false,
-    //         "message": error
-    //     })
-    // }
+        return res.status(200).json({
+            "status": true,
+            "data": "Project Created Successfully!"
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": error
+        })
+    }
 }
 
 const updateProject = async (req, res) => {
@@ -219,138 +219,155 @@ const updateProject = async (req, res) => {
     }
 }
 const inviteUserToProject = async (req, res) => {
+    try {
 
-    const { userId } = req.user
-    const { receiverMail, projectDetailsId, role } = req.body
 
-    const getProjectDetails = await projectDetails.findById(projectDetailsId)
-    const getSender = await user.find({ status: 1, _id: userId })
-    const getReceiver = await user.find({ status: 1, email: receiverMail })
-    const getProject = await project.find({ status: 1, _id: getProjectDetails.projectId })
+        const { userId } = req.user
+        const { receiverMail, projectDetailsId, role } = req.body
 
-    const newInvite = new invite({
-        senderId: userId,
-        projectDetailsId: projectDetailsId,
-        projectId: getProjectDetails.projectId,
-        receiverMail,
-        role
-    })
+        const getProjectDetails = await projectDetails.findById(projectDetailsId)
+        const getSender = await user.find({ status: 1, _id: userId })
+        const getReceiver = await user.find({ status: 1, email: receiverMail })
+        const getProject = await project.find({ status: 1, _id: getProjectDetails.projectId })
 
-    await newInvite.save();
+        const newInvite = new invite({
+            senderId: userId,
+            projectDetailsId: projectDetailsId,
+            projectId: getProjectDetails.projectId,
+            receiverMail,
+            role
+        })
 
-    if (getReceiver.length > 0) {
-        await invite.findByIdAndUpdate(newInvite._id, {
-            $set: {
-                receiverId: getReceiver[0]._id
+        await newInvite.save();
+
+        if (getReceiver.length > 0) {
+            await invite.findByIdAndUpdate(newInvite._id, {
+                $set: {
+                    receiverId: getReceiver[0]._id
+                }
+            })
+        }
+
+        let message = {
+            from: getSender.email,
+            to: receiverMail,
+            subject: "Project Invitation",
+            html: inviteTemplate({
+                url: process.env.FRONT_END_URL,
+                senderName: getSender[0].name,
+                projectName: getProject[0].projectName,
+                id: newInvite._id
+            })
+        }
+
+
+        if (getReceiver.length != 0) {
+            const newNotification = new notification({
+                senderId: userId,
+                receiverId: getReceiver[0]._id,
+                inviteId: newInvite._id,
+                message: `${getSender[0].name} invited you to a project ${getProject[0].projectName}`
+            })
+            await newNotification.save();
+        }
+
+        transport.sendMail(message, (err) => {
+            if (err) {
+                console.log(err)
+            }
+            else {
+                console.log("Invite Sent!")
             }
         })
-    }
 
-    let message = {
-        from: getSender.email,
-        to: receiverMail,
-        subject: "Project Invitation",
-        html: inviteTemplate({
-            url: process.env.FRONT_END_URL,
-            senderName: getSender[0].name,
-            projectName: getProject[0].projectName,
-            id: newInvite._id
+        return res.status(200).json({
+            "status": true,
+            "data": "Invite Sent!"
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": true,
+            "message": error
         })
     }
-
-
-    if (getReceiver.length != 0) {
-        const newNotification = new notification({
-            senderId: userId,
-            receiverId: getReceiver[0]._id,
-            inviteId: newInvite._id,
-            message: `${getSender[0].name} invited you to a project ${getProject[0].projectName}`
-        })
-        await newNotification.save();
-    }
-
-    transport.sendMail(message, (err) => {
-        if (err) {
-            console.log(err)
-        }
-        else {
-            console.log("Invite Sent!")
-        }
-    })
-
-    return res.status(200).json({
-        "status": true,
-        "data": "Invite Sent!"
-    })
 }
 
 const accept = async (req, res) => {
-    const { userId } = req.user
-    const { inviteId } = req.body
-    const currentUser = await user.find({ status: 1, _id: userId })
-    const getReceiver = await invite.findById(inviteId)
-    if (getReceiver == null) {
-        return res.status(400).json({
-            "status": false,
-            "message": "No Record Found!"
-        })
-    }
-    const getInvite = await invite.findOne({ status: 1, receiverId: userId, projectId: getReceiver.projectId, inviteStatus: 1 })
+    try {
 
-    if (getReceiver.receiverMail != currentUser[0].email) {
-        return res.status(400).json({
-            "status": false,
-            "message": "Invite Not Allowed"
-        })
-    }
 
-    if (getReceiver.inviteStatus == 1 || getReceiver.inviteStatus == 2) {
-        return res.status(400).json({
-            "status": false,
-            "message": "Invitation Link Expired"
-        })
-    }
+        const { userId } = req.user
+        const { inviteId } = req.body
+        const currentUser = await user.find({ status: 1, _id: userId })
+        const getReceiver = await invite.findById(inviteId)
+        if (getReceiver == null) {
+            return res.status(400).json({
+                "status": false,
+                "message": "No Record Found!"
+            })
+        }
+        const getInvite = await invite.findOne({ status: 1, receiverId: userId, projectId: getReceiver.projectId, inviteStatus: 1 })
 
-    if (getInvite) {
-        return res.status(400).json({
-            "status": false,
-            "message": "Already Exists"
-        })
-    }
+        if (getReceiver.receiverMail != currentUser[0].email) {
+            return res.status(400).json({
+                "status": false,
+                "message": "Invite Not Allowed"
+            })
+        }
 
-    if (!(getReceiver.receiverId)) {
+        if (getReceiver.inviteStatus == 1 || getReceiver.inviteStatus == 2) {
+            return res.status(400).json({
+                "status": false,
+                "message": "Invitation Link Expired"
+            })
+        }
+
+        if (getInvite) {
+            return res.status(400).json({
+                "status": false,
+                "message": "Already Exists"
+            })
+        }
+
+        if (!(getReceiver.receiverId)) {
+            await invite.findByIdAndUpdate(inviteId, {
+                $set: {
+                    receiverId: userId
+                }
+            })
+        }
+
         await invite.findByIdAndUpdate(inviteId, {
             $set: {
-                receiverId: userId
+                inviteStatus: 1
             }
         })
+
+        const newProjectDetail = new projectDetails({
+            userId: userId,
+            role: getReceiver.role,
+            projectId: getReceiver.projectId,
+            type: "Collaborate"
+        })
+
+        await newProjectDetail.save();
+
+        await projectDetails.findByIdAndUpdate(getReceiver.projectDetailsId, {
+            $push: {
+                collaboratedUsers: newProjectDetail._id
+            }
+        })
+
+        return res.status(200).json({
+            "status": true,
+            "data": "Invite Accepted Successfully!"
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": error
+        })
     }
-
-    await invite.findByIdAndUpdate(inviteId, {
-        $set: {
-            inviteStatus: 1
-        }
-    })
-
-    const newProjectDetail = new projectDetails({
-        userId: userId,
-        role: getReceiver.role,
-        projectId: getReceiver.projectId,
-        type: "Collaborate"
-    })
-
-    await newProjectDetail.save();
-
-    await projectDetails.findByIdAndUpdate(getReceiver.projectDetailsId, {
-        $push: {
-            collaboratedUsers: newProjectDetail._id
-        }
-    })
-
-    return res.status(200).json({
-        "status": true,
-        "data": "Invite Accepted Successfully!"
-    })
 }
 
 const listUserBasedOnProject = async (req, res) => {
@@ -378,69 +395,87 @@ const listUserBasedOnProject = async (req, res) => {
 }
 
 const recentProject = async (req, res) => {
-    const { projectDetailsId } = req.body
-    const { userId } = req.user
-    if (projectDetailsId != "" && projectDetailsId != null) {
+    try {
 
 
-        const getRecentProjectId = await projectDetails.findById(projectDetailsId)
+        const { projectDetailsId } = req.body
+        const { userId } = req.user
+        if (projectDetailsId != "" && projectDetailsId != null) {
 
-        await projectDetails.findByIdAndUpdate(projectDetailsId, {
-            $set: {
-                recentProjectStatus: true
-            }
+
+            const getRecentProjectId = await projectDetails.findById(projectDetailsId)
+
+            await projectDetails.findByIdAndUpdate(projectDetailsId, {
+                $set: {
+                    recentProjectStatus: true
+                }
+            })
+        }
+
+
+        const getRecentProject = await projectDetails.find({ recentProjectStatus: true, userId: userId, status: 1 }).populate({ path: "projectId", model: "project" }).sort({ updatedAt: -1 }).limit(Number(3))
+        return res.status(200).json({
+            "status": true,
+            "data": getRecentProject
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": error
         })
     }
-
-
-    const getRecentProject = await projectDetails.find({ recentProjectStatus: true, userId: userId, status: 1 }).populate({ path: "projectId", model: "project" }).sort({ updatedAt: -1 }).limit(Number(3))
-    return res.status(200).json({
-        "status": true,
-        "data": getRecentProject
-    })
 
 
 }
 
 const removeUser = async (req, res) => {
-    const { projectDetailsId } = req.body
-    const getProjectDetails = await projectDetails.findById(projectDetailsId)
-    await projectDetails.findByIdAndUpdate(projectDetailsId, {
-        $set: {
-            status: 0
-        }
-    })
-    const getMilestone = await milestones.find({ userId: getProjectDetails.userId, projectId: getProjectDetails.projectId })
-    const deleteMilestone = getMilestone.map(async (element) => {
-        await milestones.findByIdAndUpdate(element._id, {
+    try {
+
+
+        const { projectDetailsId } = req.body
+        const getProjectDetails = await projectDetails.findById(projectDetailsId)
+        await projectDetails.findByIdAndUpdate(projectDetailsId, {
             $set: {
                 status: 0
             }
         })
-    })
-    await Promise.all(deleteMilestone)
-    const getTask = await task.find({ userId: getProjectDetails.userId, projectId: getProjectDetails.projectId })
-    const deleteTask = getTask.map(async (element) => {
-        await task.findByIdAndUpdate(element._id, {
-            $set: {
-                status: 0
+        const getMilestone = await milestones.find({ userId: getProjectDetails.userId, projectId: getProjectDetails.projectId })
+        const deleteMilestone = getMilestone.map(async (element) => {
+            await milestones.findByIdAndUpdate(element._id, {
+                $set: {
+                    status: 0
+                }
+            })
+        })
+        await Promise.all(deleteMilestone)
+        const getTask = await task.find({ userId: getProjectDetails.userId, projectId: getProjectDetails.projectId })
+        const deleteTask = getTask.map(async (element) => {
+            await task.findByIdAndUpdate(element._id, {
+                $set: {
+                    status: 0
+                }
+            })
+        })
+
+        await Promise.all(deleteTask)
+
+        const getOwnerProjectDetails = await projectDetails.find({ projectId: getProjectDetails.projectId, status: 1 })
+        await projectDetails.findByIdAndUpdate(getOwnerProjectDetails[0]._id, {
+            $pull: {
+                collaboratedUsers: [getProjectDetails._id]
             }
         })
-    })
 
-    await Promise.all(deleteTask)
-    
-    const getOwnerProjectDetails = await projectDetails.find({projectId:getProjectDetails.projectId, status:1})
-    await projectDetails.findByIdAndUpdate(getOwnerProjectDetails[0]._id, {
-        $pull:{
-            collaboratedUsers:[getProjectDetails._id]
-        }
-    })
-
-    return res.status(200).json({
-        "status": true,
-        "data": "done"
-    })
+        return res.status(200).json({
+            "status": true,
+            "data": "done"
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": error
+        })
+    }
 }
 
 const destroy = async (req, res) => {

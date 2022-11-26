@@ -135,61 +135,34 @@ const updateProfile = async (req, res) => {
 }
 
 const register = async (req, res) => {
-    const { name, email, password } = req.body
-    const getUser = await user.findOne({ email: email })
+    try {
 
-    if (getUser) {
-        return res.status(400).json({
-            "status": false,
-            "message": config.user_already_exists
-        })
-    }
 
-    const encryptPassword = await bcrypt.hash(password, 10)
+        const { name, email, password } = req.body
+        const getUser = await user.findOne({ email: email })
 
-    const newUser = new user({
-        name,
-        email,
-        password: encryptPassword.toString(),
-        verifyStatus: "pending"
-    })
-    await newUser.save()
-
-    const token = jwt.sign({ id: newUser._id, email: newUser.email }, process.env.TOKENID, { expiresIn: "5m" })
-
-    let message = {
-        from: process.env.FROM,
-        to: newUser.email,
-        subject: "User Account Email Confirmation",
-        html: verifyTemplate({
-            url: process.env.FRONT_END_URL,
-            token: token
-        })
-    }
-    transport.sendMail(message, (err) => {
-        if (err) {
-            console.log(err)
+        if (getUser) {
+            return res.status(400).json({
+                "status": false,
+                "message": config.user_already_exists
+            })
         }
-        else {
-            console.log("Mail Sent!")
-        }
-    })
 
-    res.status(200).json({
-        "status": true,
-        "data": config.signup_success
-    })
-}
+        const encryptPassword = await bcrypt.hash(password, 10)
 
-const resendMail = async (req, res) => {
-    const { email } = req.body
-    const getUser = await user.findOne({ email })
-    if (getUser) {
-        const token = jwt.sign({ id: getUser._id, email: getUser.email }, process.env.TOKENID, { expiresIn: "10m" })
+        const newUser = new user({
+            name,
+            email,
+            password: encryptPassword.toString(),
+            verifyStatus: "pending"
+        })
+        await newUser.save()
+
+        const token = jwt.sign({ id: newUser._id, email: newUser.email }, process.env.TOKENID, { expiresIn: "5m" })
 
         let message = {
             from: process.env.FROM,
-            to: getUser.email,
+            to: newUser.email,
             subject: "User Account Email Confirmation",
             html: verifyTemplate({
                 url: process.env.FRONT_END_URL,
@@ -197,29 +170,74 @@ const resendMail = async (req, res) => {
             })
         }
         transport.sendMail(message, (err) => {
-            if (err)
+            if (err) {
                 console.log(err)
-            else
+            }
+            else {
                 console.log("Mail Sent!")
+            }
         })
 
-        // await user.findByIdAndUpdate(getUser.id, {
-        //     $set: {
-        //         verifyStatus: "Success"
-        //     }
-        // })
-    }
-    else {
-        return res.status(400).json({
+        res.status(200).json({
+            "status": true,
+            "data": config.signup_success
+        })
+    } catch (err) {
+        res.status(400).json({
             "status": false,
-            "message": config.user_not_exist
+            "message": err
         })
     }
+}
 
-    res.status(200).json({
-        "status": true,
-        "data": config.mail_sent
-    })
+const resendMail = async (req, res) => {
+    try {
+
+
+        const { email } = req.body
+        const getUser = await user.findOne({ email })
+        if (getUser) {
+            const token = jwt.sign({ id: getUser._id, email: getUser.email }, process.env.TOKENID, { expiresIn: "10m" })
+
+            let message = {
+                from: process.env.FROM,
+                to: getUser.email,
+                subject: "User Account Email Confirmation",
+                html: verifyTemplate({
+                    url: process.env.FRONT_END_URL,
+                    token: token
+                })
+            }
+            transport.sendMail(message, (err) => {
+                if (err)
+                    console.log(err)
+                else
+                    console.log("Mail Sent!")
+            })
+
+            // await user.findByIdAndUpdate(getUser.id, {
+            //     $set: {
+            //         verifyStatus: "Success"
+            //     }
+            // })
+        }
+        else {
+            return res.status(400).json({
+                "status": false,
+                "message": config.user_not_exist
+            })
+        }
+
+        res.status(200).json({
+            "status": true,
+            "data": config.mail_sent
+        })
+    } catch (error) {
+        res.status(400).json({
+            "status": false,
+            "message": err
+        })
+    }
 }
 
 const activate = async (req, res) => {

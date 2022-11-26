@@ -3,15 +3,25 @@ const invite = require("../models/invite")
 const notification = require("../models/notification")
 
 const index = async (req, res) => {
-    const { userId } = req.user
-    const getNotification = await notification.find({ receiverId: userId }).populate({ path: "senderId", model: "user", select: { _id: 1, name: 1, profileImg: 1 } }).select({ senderId: 1, message: 1, createdAt: 1 })
-    const getNotificationCount = await notification.find({ receiverId: userId }).count()
+    try {
 
-    return res.status(200).json({
-        "status": true,
-        "data": getNotification,
-        "totalCount": getNotificationCount
-    })
+
+        const { userId } = req.user
+        const getNotification = await notification.find({ receiverId: userId }).populate({ path: "senderId", model: "user", select: { _id: 1, name: 1, profileImg: 1 } }).select({ senderId: 1, message: 1, createdAt: 1 })
+        const getNotificationCount = await notification.find({ receiverId: userId }).count()
+
+        return res.status(200).json({
+            "status": true,
+            "data": getNotification,
+            "totalCount": getNotificationCount
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": error,
+
+        })
+    }
 }
 
 const decline = async (req, res) => {
@@ -47,23 +57,32 @@ const decline = async (req, res) => {
 }
 
 const markAllRead = async (req, res) => {
-    const { userId } = req.user
-    const getNotification = await notification.find({ receiverId: userId, notificationStatus: true })
-    if (getNotification > 0) {
-        const notifyPromise = getNotification.map(async (element) => {
-            await notification.findByIdAndUpdate(element._id, {
-                $set: {
-                    notificationStatus: false
-                }
-            })
-        })
-        await Promise.all(notifyPromise)
-    }
+    try {
 
-    return res.status(200).json({
-        "status": true,
-        "data": "done"
-    })
+
+        const { userId } = req.user
+        const getNotification = await notification.find({ receiverId: userId, notificationStatus: true })
+        if (getNotification > 0) {
+            const notifyPromise = getNotification.map(async (element) => {
+                await notification.findByIdAndUpdate(element._id, {
+                    $set: {
+                        notificationStatus: false
+                    }
+                })
+            })
+            await Promise.all(notifyPromise)
+        }
+
+        return res.status(200).json({
+            "status": true,
+            "data": "done"
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": true,
+            "message": error
+        })
+    }
 }
 
 module.exports = { index, decline, markAllRead }

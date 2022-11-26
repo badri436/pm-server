@@ -243,7 +243,7 @@ const test = async (req, res) => {
         }).group({
             _id: "$projectId",
         }).count("totalcount")
-        console.log(filter[0].data.length)
+
         return res.status(200).json({
             "status": true,
             "data": filter[0].data,
@@ -259,26 +259,46 @@ const test = async (req, res) => {
 }
 
 const milestoneBasedOnProject = async (req, res) => {
-    const { projectId } = req.body
-    const { count, page } = req.query
-    const skip = count * page
-    const getMilestone = await milestone.find({ status: 1, projectId: projectId }).populate({ path: "owner", model: "user", select: { _id: 1, name: 1 } }).limit(Number(count)).skip(Number(skip))
-    const getMilestoneCount = await milestone.find({ status: 1, projectId: projectId }).count()
-    return res.status(200).json({
-        "status": true,
-        "data": getMilestone,
-        "totalCount": getMilestoneCount
-    })
+    try {
+
+
+        const { projectId } = req.body
+        const { count, page } = req.query
+        const skip = count * page
+        const getMilestone = await milestone.find({ status: 1, projectId: projectId }).populate({ path: "owner", model: "user", select: { _id: 1, name: 1 } }).limit(Number(count)).skip(Number(skip))
+        const getMilestoneCount = await milestone.find({ status: 1, projectId: projectId }).count()
+        return res.status(200).json({
+            "status": true,
+            "data": getMilestone,
+            "totalCount": getMilestoneCount
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": error,
+
+        })
+    }
 }
 
 const milestoneBasedOnUser = async (req, res) => {
-    const { userId } = req.user
-    const getMilestone = await projectDetails.find({ userId: userId }).populate({ path: "projectId", model: "project", select: { _id: 1, projectName: 1, milestoneId: 1 }, populate: { path: "milestoneId", model: "milestone" } })
-    console.log(getMilestone)
-    return res.status(200).json({
-        "status": true,
-        "data": getMilestone
-    })
+    try {
+
+
+        const { userId } = req.user
+        const getMilestone = await projectDetails.find({ userId: userId }).populate({ path: "projectId", model: "project", select: { _id: 1, projectName: 1, milestoneId: 1 }, populate: { path: "milestoneId", model: "milestone" } })
+
+        return res.status(200).json({
+            "status": true,
+            "data": getMilestone
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": error,
+
+        })
+    }
 }
 
 const milestoneDropDownlist = async (req, res) => {
@@ -298,29 +318,38 @@ const milestoneDropDownlist = async (req, res) => {
 }
 
 const milestoneProgress = async (req, res) => {
-    let closedCount = 0;
-    let totalCount = 0;
-    const { milestoneId } = req.body
-    const getMilestone = await milestoneTaskList.find({ milestoneId: milestoneId })
-    console.log(getMilestone)
-
-    getMilestone.map((taskList) => {
-        totalCount = totalCount + 1
-        if (taskList.taskListStatus === "Closed") {
-            closedCount = closedCount + 1
-        }
-        console.log(taskList.taskListStatus)
-    })
-
-    let closedPercent = (closedCount / totalCount) * 100;
-    var truncated = closedPercent - closedPercent % 1;
-    console.log(truncated);
+    try {
 
 
-    return res.status(200).json({
-        "status": true,
-        "data": truncated
-    })
+        let closedCount = 0;
+        let totalCount = 0;
+        const { milestoneId } = req.body
+        const getMilestone = await milestoneTaskList.find({ milestoneId: milestoneId })
+
+
+        getMilestone.map((taskList) => {
+            totalCount = totalCount + 1
+            if (taskList.taskListStatus === "Closed") {
+                closedCount = closedCount + 1
+            }
+
+        })
+
+        let closedPercent = (closedCount / totalCount) * 100;
+        var truncated = closedPercent - closedPercent % 1;
+
+
+
+        return res.status(200).json({
+            "status": true,
+            "data": truncated
+        })
+    } catch (error) {
+        return res.status(400).json({
+            "status": false,
+            "message": error
+        })
+    }
 
 
 }
