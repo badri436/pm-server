@@ -326,7 +326,7 @@ const groupByProject = async (req, res) => {
 const individualTaskList = async (req, res) => {
     try {
         const { taskId } = req.body
-        const getTask = await task.findById(taskId).populate({ path: "projectId", model: "project", select: { _id: 1, projectName: 1 } }).populate({ path: "assignTo", model: "user", select: { _id: 1, name: 1 } })
+        const getTask = await task.findById(taskId).populate({ path: "projectId", model: "project", select: { _id: 1, projectName: 1 } }).populate({ path: "assignTo", model: "user", select: { _id: 1, name: 1 } }).populate({ path: 'userId', model: "user", select: { _id: 1, profileImg: 1 } })
         const getProjectDetails = await projectDetails.find({ projectId: getTask.projectId })
         return res.status(200).json({
             "status": true,
