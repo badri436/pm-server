@@ -442,7 +442,7 @@ const changePassword = async (req, res) => {
 }
 const listUser = async (req, res) => {
     try {
-        const { userId } = req.user
+        const { userId } = req.user;
 
         const getUser = await user.findById(userId)
         return res.status(200).json({
